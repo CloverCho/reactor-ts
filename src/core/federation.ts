@@ -446,7 +446,7 @@ class RTIClient extends EventEmitter {
         try {
             Log.debug(this, () => {return `Sending RTI (timed) message to `
                 + `federate ID: ${destFederateID}, port ID: ${destPortID} `
-                + `, time: ${time}.`});
+                + `, time: ${TimeValue.fromBinary(time)}.`});
             this.socket?.write(msg);
         } catch (e) {
             Log.error(this, () => {return e});
@@ -467,7 +467,7 @@ class RTIClient extends EventEmitter {
         completeTime.copy(msg, 1);
         // FIXME: Add microstep properly.
         try {
-            Log.debug(this, () => {return "Sending RTI logical time complete: " + completeTime;});
+            Log.debug(this, () => {return "Sending RTI logical time complete: " + TimeValue.fromBinary(completeTime);});
             this.socket?.write(msg);
         } catch (e) {
             Log.error(this, () => {return e});
@@ -830,6 +830,8 @@ export class FederatedApp extends App {
     }
 
     protected _shutdown() {
+        Log.debug(this, () => "_shutdown() is called at " + this.util.getCurrentLogicalTime());
+        Log.global.debug("Exiting _next.");
         this.sendRTILogicalTimeComplete(this.util.getCurrentLogicalTime());
         this.sendRTIResign();
         this.shutdownRTIClient();
@@ -914,10 +916,10 @@ export class FederatedApp extends App {
      * @param destPortID The ID of the FederateInPort intended to receive the message.
      */
     public sendRTITimedMessage(msg: Buffer, destFederateID: number, destPortID: number ) {
-        let time = this.util.getCurrentLogicalTime().toBinary();
+        let time = this.util.getCurrentLogicalTime();
         Log.debug(this, () => {return `Sending RTI timed message to federate ID: ${destFederateID}`
             + ` port ID: ${destPortID} and time: ${time}`});
-        this.rtiClient.sendRTITimedMessage(msg, destFederateID, destPortID, time);
+        this.rtiClient.sendRTITimedMessage(msg, destFederateID, destPortID, time.toBinary());
     }
 
     /**
@@ -926,9 +928,9 @@ export class FederatedApp extends App {
      * @param completeTimeValue The TimeValue that is now complete.
      */
     public sendRTILogicalTimeComplete(completeTimeValue: TimeValue) {
-        let time = completeTimeValue.toBinary();
+        let time = completeTimeValue;
         Log.debug(this, () => {return `Sending RTI logical time complete with time: ${completeTimeValue}`});
-        this.rtiClient.sendRTILogicalTimeComplete(time)
+        this.rtiClient.sendRTILogicalTimeComplete(time.toBinary())
     }
 
     /**
@@ -947,9 +949,9 @@ export class FederatedApp extends App {
      * advance logical time.
      */
     public sendRTINextEventTime(nextTime: TimeValue) {
-        let time = nextTime.toBinary();
+        let time = nextTime;
         Log.debug(this, () => {return `Sending RTI next event time with time: ${time}`});
-        this.rtiClient.sendRTINextEventTime(time);
+        this.rtiClient.sendRTINextEventTime(time.toBinary());
     }
 
     /**
